@@ -1,0 +1,72 @@
+<html>
+
+<head>
+    <title>Bun ver.2</title>
+
+    <script>
+        var Module = { TOTAL_MEMORY: 128*1024*1024 };
+    </script>
+
+    <script type="text/javascript" src="js/box2d/box2d.js"></script>
+    <script type="text/javascript" src="js/box2d/embox2d-helpers.js"></script>
+    <script type="text/javascript" src="js/box2d/embox2d-html5canvas-debugDraw.js"></script>
+
+    <script type="text/javascript" src="js/scene.js"></script>
+    <script type="text/javascript" src="js/ground.js"></script>
+    <script type="text/javascript" src="js/forces.js"></script>
+    <script type="text/javascript" src="js/bun.js"></script>
+    <script type="text/javascript" src="js/bunBox2d-helpers.js"></script>
+
+    <script src='js/jquery/jquery.js'></script>
+    <script src='js/paper/paper-full.min.js'></script>
+    <script src='js/convex2.js'></script>
+    <script src='js/paperDraw.js'></script>
+
+
+    <script type="text/javascript">
+        window.onload = function() {
+
+            paperInit();
+
+            using(Box2D, "b2.+");
+            initHtmlElements();
+            init();
+            createWorld();
+            animate();
+        };
+
+    </script>
+    <style>
+        body, html {
+            width: 100%;
+            height: 100%;
+            margin: 0;
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+</head>
+<body>
+<div id="container" style="text-align: center;">
+    <div id="buttons" style="align-items: center;">
+        <button onclick="directForces(-1)">Direct wind to left</button>
+        <button onclick="directForces(1)">Direct wind to right</button>
+        <button onclick="strengthenForces()">Strengthen wind</button>
+        <button onclick="weakenForces()">Weaken wind</button>
+        <button onclick="resetForcesValue()">Stop wind</button>
+        <button onclick="createGoodBridge()">Create good bridge</button>
+        <button onclick="createBadBridge()">Create bad bridge</button>
+        <button onclick="destroyBridge()">Destroy bridge</button>
+    </div>
+    <div style="height:94%;">
+        <div style="float:left;">
+            <canvas id="canvas"></canvas>
+        </div>
+        <div style="background-color:#FFD700;float:right;">
+            <canvas id="paperCanvas"></canvas>
+        </div>
+    </div>
+</div>
+
+</body>
+</html>

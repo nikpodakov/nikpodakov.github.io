@@ -1,268 +1,61 @@
-var PTM = 18;
+var PTM = 40;
 var world = null;
-var mouseJointGroundBody;
 var canvas;
 var context;
-var myDebugDraw;
-var myQueryCallback;
-var mouseJoint = null;
 var run = true;
-var mouseDown = false;
-var shiftDown = false;
-var mousePosPixel = { x: 0, y: 0 };
-var prevMousePosPixel = { x: 0, y: 0 };
-var mousePosWorld = { x: 0, y: 0 };
 var canvasOffset = { x: 0, y: 0 };
-var viewCenterPixel = { x: 320, y: 240 };
+var viewCenterPixel = { x: 0, y: 0 };
 var viewCenterWorld;
 
-function myRound(val, places) {
-    var c = 1;
-    for (var i = 0; i < places; i++)
-        c *= 10;
-    return Math.round(val*c)/c;
-}
-
 function getWorldPointFromPixelPoint(pixelPoint) {
-	return {
-		x: (pixelPoint.x - canvasOffset.x)/PTM,
-		y: (pixelPoint.y - (canvas.height - canvasOffset.y))/PTM
-	};
-}
-
-function getInvertWorldPointFromPixelPoint(pixelPoint) {
-	return {
-		x: (pixelPoint.x - canvasOffset.x)/PTM,
-		y: -(pixelPoint.y - (canvas.height - canvasOffset.y))/PTM
-	};
-}
-
-function updateMousePos(evt) {
-    var rect = canvas.getBoundingClientRect();
-    mousePosPixel = {
-        x: evt.clientX - rect.left,
-        y: canvas.height - (evt.clientY - rect.top)
+    return {
+        x: (pixelPoint.x - canvasOffset.x) / PTM,
+        y: (canvasOffset.y - pixelPoint.y) / PTM
     };
-    mousePosWorld = getWorldPointFromPixelPoint(mousePosPixel);
 }
 
-function setViewCenterWorld(b2VecPos, instantaneous) {
+function getPixelPointFromWorldPoint(worldPoint) {
+    return {
+        x: worldPoint.get_x() * PTM + canvasOffset.x,
+        y: canvasOffset.y - worldPoint.get_y() * PTM
+    }
+}
+
+function getPixelPointFromWorldDot(worldPoint) {
+	return {
+		x: worldPoint.x * PTM + canvasOffset.x,
+		y: canvasOffset.y - worldPoint.y * PTM
+	}
+}
+
+function setViewCenterWorld(b2VecPos) {
     var currentViewCenterWorld = getWorldPointFromPixelPoint( viewCenterPixel );
     var toMoveX = b2VecPos.get_x() - currentViewCenterWorld.x;
     var toMoveY = b2VecPos.get_y() - currentViewCenterWorld.y;
-    var fraction = instantaneous ? 1 : 0.25;
-    canvasOffset.x -= myRound(fraction * toMoveX * PTM, 0);
-    canvasOffset.y += myRound(fraction * toMoveY * PTM, 0);
-}
-
-function onMouseMove(evt) {
-    prevMousePosPixel = mousePosPixel;
-    updateMousePos(evt);
-    if ( shiftDown ) {
-        canvasOffset.x += (mousePosPixel.x - prevMousePosPixel.x);
-        canvasOffset.y -= (mousePosPixel.y - prevMousePosPixel.y);
-        draw();
-    }
-    else if ( mouseDown && mouseJoint != null ) {
-        mouseJoint.SetTarget( new b2Vec2(mousePosWorld.x, mousePosWorld.y) );
-    }
-}
-
-function startMouseJoint() {
-
-    if ( mouseJoint != null )
-        return;
-
-    // Make a small box.
-    var aabb = new b2AABB();
-    var d = 0.001;
-    aabb.set_lowerBound(new b2Vec2(mousePosWorld.x - d, mousePosWorld.y - d));
-    aabb.set_upperBound(new b2Vec2(mousePosWorld.x + d, mousePosWorld.y + d));
-
-    // Query the world for overlapping shapes.            
-    myQueryCallback.m_fixture = null;
-    myQueryCallback.m_point = new b2Vec2(mousePosWorld.x, mousePosWorld.y);
-    world.QueryAABB(myQueryCallback, aabb);
-
-    if (myQueryCallback.m_fixture)
-    {
-        var body = myQueryCallback.m_fixture.GetBody();
-        var md = new b2MouseJointDef();
-        md.set_bodyA(mouseJointGroundBody);
-        md.set_bodyB(body);
-        md.set_target( new b2Vec2(mousePosWorld.x, mousePosWorld.y) );
-        md.set_maxForce( 1000 * body.GetMass() );
-        md.set_collideConnected(true);
-
-        mouseJoint = Box2D.castObject( world.CreateJoint(md), b2MouseJoint );
-        body.SetAwake(true);
-    }
-}
-
-function onMouseDown(evt) {
-    updateMousePos(evt);
-    if ( !mouseDown )
-        startMouseJoint();
-    mouseDown = true;
-}
-
-function onMouseUp(evt) {
-    mouseDown = false;
-    updateMousePos(evt);
-    if ( mouseJoint != null ) {
-        world.DestroyJoint(mouseJoint);
-        mouseJoint = null;
-    }
-}
-
-function onMouseOut(evt) {
-    onMouseUp(evt);
-}
-
-function init() {
-
-    canvas.addEventListener('mousemove', function(evt) {
-        onMouseMove(evt);
-    }, false);
-
-	canvas.addEventListener('mousedown', function(evt) {
-        onMouseDown(evt);
-    }, false);
-
-	canvas.addEventListener('mouseup', function(evt) {
-        onMouseUp(evt);
-    }, false);
-
-	canvas.addEventListener('mouseout', function(evt) {
-        onMouseOut(evt);
-    }, false);
-	window.addEventListener("keydown", keyPress, false);
-	window.addEventListener("keyup", keyRelease, false);
-    myDebugDraw = getCanvasDebugDraw();
-    myDebugDraw.SetFlags(e_shapeBit | e_jointBit);
-
-    myQueryCallback = new b2QueryCallback();
-
-    Box2D.customizeVTable(myQueryCallback, [{
-        original: Box2D.b2QueryCallback.prototype.ReportFixture,
-        replacement:
-            function(thsPtr, fixturePtr) {
-                var ths = Box2D.wrapPointer( thsPtr, b2QueryCallback );
-                var fixture = Box2D.wrapPointer( fixturePtr, b2Fixture );
-                if ( fixture.GetBody().GetType() != Box2D.b2_dynamicBody ) //mouse cannot drag static bodies around
-                    return true;
-                if ( ! fixture.TestPoint( ths.m_point ) )
-                    return true;
-                ths.m_fixture = fixture;
-                return false;
-            }
-    }]);
-}
-
-function initHtmlElements() {
-	canvas = document.getElementById("canvas");
-	var buttonsDiv = document.getElementById("buttons");
-	context = canvas.getContext( '2d' );
-	canvas.width  = window.innerWidth / 2;
-	canvas.height = window.innerHeight - buttonsDiv.offsetHeight;
-	//canvasOffset.x = canvas.width;
-	canvasOffset.y =  canvas.height/1.2;
-	viewCenterPixel.x = canvasOffset.x;
-	viewCenterPixel.y = canvasOffset.y;
-}
-
-function keyPress(e) {
-	if ( e.keyCode == 32 || e.keyCode == 38) {
-		if(!bun.isJumping) {
-			applyImpulses(bun.verticesList, new b2Vec2(0, 80));
-			bun.isJumping = true;
-		}
-	}
-
-	if ( e.keyCode == 37 ) {
-		directForces(-1);
-		setForcesValue();
-	}
-
-	if ( e.keyCode == 39 ) {
-		directForces(1);
-		setForcesValue();
-	}
-	if (e.keyCode == 49) {
-		var vertices = [];
-		vertices.push(new b2Vec2(160, 0));
-		vertices.push(new b2Vec2(170, 4));
-		vertices.push(new b2Vec2(185, 4));
-		vertices.push(new b2Vec2(195, 0));
-		createBridgeByVertices(vertices);
-	}
-	if (e.keyCode == 50) {
-		var vertices = [];
-		vertices.push(new b2Vec2(160, 0));
-		vertices.push(new b2Vec2(170, -4));
-		vertices.push(new b2Vec2(185, -4));
-		vertices.push(new b2Vec2(195, 0));
-		createBridgeByVertices(vertices);
-	}
-	if (e.keyCode == 51) {
-		var vertices = [];
-		vertices.push(new b2Vec2(160, 0));
-		vertices.push(new b2Vec2(168, 10));
-		vertices.push(new b2Vec2(171, 2));
-		vertices.push(new b2Vec2(184, 2));
-		vertices.push(new b2Vec2(187, 10));
-		vertices.push(new b2Vec2(195, 0));
-		createBridgeByVertices(vertices);
-	}1
-	if (e.keyCode == 52) {
-		var vertices = [];
-		vertices.push(new b2Vec2(160, 0));
-		vertices.push(new b2Vec2(163, 4));
-		vertices.push(new b2Vec2(169, 8));
-		vertices.push(new b2Vec2(175, 10));
-		vertices.push(new b2Vec2(180, 10));
-		vertices.push(new b2Vec2(186, 8));
-		vertices.push(new b2Vec2(192, 4));
-		vertices.push(new b2Vec2(195, 0));
-		createBridgeByVertices(vertices);
-	}
-	if (e.keyCode == 8) {
-		destroyBridge();
-	}
-}
-
-function keyRelease(e) {
-	if ( e.keyCode == 37  ||  e.keyCode == 39 ) {
-		resetForcesValue();
-	}
-	if ( e.keyCode == 32 || e.keyCode == 38) {
-		bun.isJumping = false;
-	}
+    canvasOffset.x -= Math.round(toMoveX * PTM);
+    canvasOffset.y += Math.round(toMoveY * PTM);
 }
 
 function createWorld() {
 
-    if ( world != null )
+    if ( world != null ) {
         Box2D.destroy(world);
-	viewCenterWorld = new b2Vec2(0, 18);
-	initForcesVectors();
+    }
+    var centerWorldYOffset = canvas.height / PTM / 2; //middle
+    centerWorldYOffset /= 2;
+	viewCenterWorld = new b2Vec2(0, centerWorldYOffset);
     world = new b2World( new b2Vec2(0.0, -10.0) );
+
+    var myDebugDraw = getCanvasDebugDraw();
+    myDebugDraw.SetFlags(e_shapeBit | e_jointBit);
     world.SetDebugDraw(myDebugDraw);
-
-    mouseJointGroundBody = world.CreateBody( new b2BodyDef() );
-
-    //create ground
-    //var shape = new b2EdgeShape();
-    //shape.Set(new b2Vec2(-100.0, 0.0), new b2Vec2(100.0, 0.0));
-    //var ground = world.CreateBody(new b2BodyDef());
-    //ground.CreateFixture(shape, 0.0);
 
 	createWorldBounds();
 
-    //bun.buildBun(world, acquireCircleCoords(21, 0, 5, 3));
+    return world;
 }
 
-function draw() {
+function debugDraw() {
     context.fillStyle = 'rgb(0,0,0)';
     context.fillRect(0, 0, canvas.width, canvas.height);
 
@@ -277,16 +70,8 @@ function draw() {
     context.fillStyle = 'rgb(255,255,0)';
     world.DrawDebugData();
 
-    if ( mouseJoint != null ) {
-        //mouse joint is not drawn with regular joints in debug draw
-        var p1 = mouseJoint.GetAnchorB();
-        var p2 = mouseJoint.GetTarget();
-        context.strokeStyle = 'rgb(204,204,204)';
-        context.beginPath();
-        context.moveTo(p1.get_x(),p1.get_y());
-        context.lineTo(p2.get_x(),p2.get_y());
-        context.stroke();
-    }
+    drawMouseJoint();
+
     context.restore();
 }
 
@@ -301,18 +86,318 @@ window.requestAnimFrame = (function(){
         };
 })();
 
-function step(timestamp) {
+function step() {
     world.Step(1/60, 3, 2);
-	var bunCenter = bun.getBunCenter();
-	applyForces(bun.verticesList, bunCenter);
-	viewCenterWorld.set_x((bunCenter != null ? bunCenter.get_x() : 0.0) + 30);
-	//setViewCenterWorld(viewCenterWorld, true);
-    draw();
-    return;
+    var bunCenter = bun.getBunCenter();
+    applyForces(bun.verticesList, bunCenter);
+	viewCenterWorld.set_x((bunCenter != null ? bunCenter.get_x() : 0.0));
+	//viewCenterWorld.set_y((bunCenter != null ? bunCenter.get_y() : 0.0));
+	setViewCenterWorld(viewCenterWorld);
+    //debugDraw();
+    drawBun();
+	drawBunContent();
 }
 
 function animate() {
     if ( run )
         requestAnimFrame( animate );
     step();
+}
+
+var lastDrawnBun = null;
+var lastDrawOtherPaths = [];
+
+function drawBun() {
+    if (bun.bunCenter == null) {
+        return;
+    }
+
+    if (lastDrawnBun != null) {
+        lastDrawnBun.remove();
+    }
+
+    var path = new Path({
+        strokeColor: 'red',
+        strokeWidth: 2,
+        closed: true
+    })
+    bun.verticesList.forEach(function(vertex) {
+        var vertexCenter = vertex.GetWorldCenter()
+        var p = getPixelPointFromWorldPoint(vertexCenter);
+        path.add(p);
+    });
+    path.smooth();
+    lastDrawnBun = path;
+    paper.view.update();
+}
+
+function drawBunContent() {
+	if (bun.bunCenter == null) {
+		return;
+	}
+	for(var i = 0; i < bun.otherPathsData.length; i++) {
+		if (lastDrawOtherPaths[i] != null) {
+			//lastDrawOtherPaths[i].forEach( function (circle) {
+			//	circle.remove();
+			//});
+			lastDrawOtherPaths[i].remove();
+		}
+		lastDrawOtherPaths[i] = new Path({
+			strokeColor: 'red',
+			strokeWidth: 2
+		});
+		var bunOtherPathsData = bun.otherPathsData[i].length;
+		for (var j = 0; j < bunOtherPathsData; j++) {
+			var resultPoint = { x: 0, y: 0 };
+			var l = bun.otherPathsData[i][j].length;
+			for (var k = 0; k < l; k++) {
+				var newPointPosition = calculateNewPointPosition(bun.verticesList[k], bun.verticesBaseOffsets[k],
+					bun.otherPathsData[i][j][k].offset, bun.otherPathsData[i][j][k].angle);
+				resultPoint.x += newPointPosition.x;
+				resultPoint.y += newPointPosition.y;
+			}
+			resultPoint.x /= l;
+			resultPoint.y /= l;
+
+			//var circle = new Path.Circle(getPixelPointFromWorldDot(resultPoint), 5);
+			//circle.fillColor = 'blue';
+			//lastDrawOtherPaths[i].push(circle);
+			lastDrawOtherPaths[i].add(getPixelPointFromWorldDot(resultPoint));
+		}
+		lastDrawOtherPaths[i].smooth();
+//		bun.otherPathsData[i].forEach(function (pointData) {
+//			var resultPosition = {x: 0.0, y: 0.0};
+//			for(var k = 0; k < pointData.length; k++) {
+//				 var newPointPosition = calculateNewPointPosition(bun.verticesList[k], bun.verticesBaseOffsets[k],
+//				 pointData[k].offset, pointData[k].angle);
+//				 resultPosition.x += newPointPosition.x;
+//				 resultPosition.y += newPointPosition.y;
+//			 }
+//			 resultPosition.x /= pointData.length;
+//			 resultPosition.y /= pointData.length;
+//			/*var newPointPosition = calculateNewPointPosition(bun.verticesList[0], bun.verticesBaseOffsets[0],
+//				pointData[0].offset, pointData[0].angle);
+//			resultPosition.x += newPointPosition.x;
+//			resultPosition.y += newPointPosition.y;*/
+//
+//			//lastDrawOtherPaths[i].add(getPixelPointFromWorldDot(resultPosition));
+//			var circle = new Path.Circle(getPixelPointFromWorldDot(resultPosition), 5);
+//			circle.fillColor = 'blue';
+//			lastDrawOtherPaths[i].push(circle);
+//		});
+		//lastDrawOtherPaths[i].smooth();
+	}
+	paper.view.update();
+}
+
+function drawBunContent3() {
+	if (bun.bunCenter == null) {
+		return;
+	}
+	for(var i = 0; i < bun.otherPathsData.length; i++) {
+		if (lastDrawOtherPaths[i] != null) {
+			lastDrawOtherPaths[i].forEach( function (circle) {
+				circle.remove();
+			});
+			//lastDrawOtherPaths[i].remove();
+		}
+		lastDrawOtherPaths[i] = [];
+		bun.otherPathsData[i].forEach(function (pointData) {
+			var resultPosition = {x: 0.0, y: 0.0};
+			/*for(var j = 0; j < pointData.length; j++) {
+				var newPointPosition = calculateNewPointPosition(bun.verticesList[j], bun.verticesBaseOffsets[j],
+					pointData[j].offset, pointData[j].angle);
+				resultPosition.x += newPointPosition.x;
+				resultPosition.y += newPointPosition.y;
+			}
+			resultPosition.x /= pointData.length;
+			resultPosition.y /= pointData.length;*/
+				var newPointPosition = calculateNewPointPosition(bun.verticesList[0], bun.verticesBaseOffsets[0],
+					pointData[0].offset, pointData[0].angle);
+				resultPosition.x += newPointPosition.x;
+				resultPosition.y += newPointPosition.y;
+
+			//lastDrawOtherPaths[i].add(getPixelPointFromWorldDot(resultPosition));
+			var circle = new Path.Circle(getPixelPointFromWorldDot(resultPosition), 5);
+			circle.fillColor = 'blue';
+			lastDrawOtherPaths[i].push(circle);
+		});
+		//lastDrawOtherPaths[i].smooth();
+	}
+	paper.view.update();
+}
+
+function calculateNewPointPosition(vertex, baseVertexDistance, basePointDistance, basePointAngle) {
+	var bunCenter = bun.getBunCenter();
+	var newDistance = Math.sqrt(Math.pow(vertex.GetWorldCenter().get_x() - bunCenter.get_x(), 2) +
+		Math.pow(vertex.GetWorldCenter().get_y() - bunCenter.get_y(), 2));
+	var angle = angleBetweenWithSign({x: vertex.GetWorldCenter().get_x(), y: vertex.GetWorldCenter().get_y()},
+		{x: bunCenter.get_x(), y: bunCenter.get_y()}) + basePointAngle;
+	if(angle >= 2 * Math.PI) {
+		angle -= Math.PI * 2;
+	}
+	var newPointPosition = {
+		x: vertex.GetWorldCenter().get_x() - (vertex.GetWorldCenter().get_y() - bunCenter.get_y())/Math.tan(angle),
+		y: bunCenter.get_y()
+	};
+	newPointPosition.x -= vertex.GetWorldCenter().get_x();
+	newPointPosition.y -= vertex.GetWorldCenter().get_y();
+	if( (vertex.GetWorldCenter().get_y() < bunCenter.get_y() &&
+			angle < Math.PI) ||
+		(vertex.GetWorldCenter().get_y() > bunCenter.get_y() &&
+			angle > Math.PI)) {
+		newPointPosition.x *= -1;
+		newPointPosition.y *= -1;
+	}
+	var factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.GetWorldCenter().get_x();
+	newPointPosition.y += vertex.GetWorldCenter().get_y();
+	return newPointPosition;
+}
+
+function drawBunContent2() {
+
+	var bunCenter = {x: 3, y: 4};
+	var oldVertex = {x: 1, y: 6};
+	var vertex = {x: 5, y: 6};
+	var point = {x: 3, y: 5};
+	var basePointDistance = Math.sqrt(5);
+	var baseVertexDistance = Math.sqrt(8);
+	var basePointAngle = angleBetweenWithSign(point, oldVertex, bunCenter);
+	var newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	var angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	var newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	var factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+
+	oldVertex = {x: 5, y: 6};
+	vertex = {x: 5, y: 2};
+	basePointDistance = Math.sqrt(5);
+	baseVertexDistance = Math.sqrt(8);
+	basePointAngle = angleBetweenWithSign(point, oldVertex, bunCenter);
+	newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+
+	oldVertex = {x: 5, y: 2};
+	vertex = {x: 1, y: 2};
+	basePointDistance = Math.sqrt(13);
+	baseVertexDistance = Math.sqrt(8);
+	basePointAngle = angleBetweenWithSign(point, oldVertex, bunCenter);
+	newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+
+	oldVertex = {x: 1, y: 2};
+	vertex = {x: 1, y: 6};
+	basePointDistance = Math.sqrt(13);
+	baseVertexDistance = Math.sqrt(8);
+	basePointAngle = angleBetweenWithSign(point, oldVertex, bunCenter);
+	newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+	//alert(newPointPosition.x+' '+newPointPosition.y);
+	return newPointPosition;
+}
+
+function drawBunContent1() {
+
+	var bunCenter = {x: -0.07, y: 2.64};
+	var vertex = {x: -3.24, y: 2.75};
+	var basePointDistance = 3.27;
+	var baseVertexDistance = 3.117;
+	var basePointAngle = 0.56;
+	var newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	var angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	var newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	if((vertex.x - bunCenter.x) * (bunCenter.y - vertex.y) > 0) {
+		newPointPosition.x *= -1;
+		newPointPosition.y *= -1;
+	}
+	var factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+
+	bunCenter = {x: -0.5, y: 2.6};
+	vertex = {x: -3.62, y: 2.32};
+	newDistance = Math.sqrt(Math.pow(vertex.x - bunCenter.x, 2) +
+		Math.pow(vertex.y - bunCenter.y, 2));
+	angle = angleBetweenWithSign({x: vertex.x, y: vertex.y}, {x: bunCenter.x, y: bunCenter.y}) + basePointAngle;
+	newPointPosition = {
+		x: vertex.x - (vertex.y - bunCenter.y)/Math.tan(angle),
+		y: bunCenter.y
+	};
+	newPointPosition.x -= vertex.x;
+	newPointPosition.y -= vertex.y;
+	if((vertex.x - bunCenter.x) * (bunCenter.y - vertex.y) > 0) {
+		newPointPosition.x *= -1;
+		newPointPosition.y *= -1;
+	}
+	factor = basePointDistance * newDistance / baseVertexDistance /
+		Math.sqrt(Math.pow(newPointPosition.x, 2) + Math.pow(newPointPosition.y, 2));
+	newPointPosition.x *= factor;
+	newPointPosition.y *= factor;
+	newPointPosition.x += vertex.x;
+	newPointPosition.y += vertex.y;
+
+	//alert(newPointPosition.x+' '+newPointPosition.y);
+	return newPointPosition;
 }

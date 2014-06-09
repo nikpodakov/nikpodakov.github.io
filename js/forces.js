@@ -80,8 +80,8 @@ function calculateForceVector(vertexCoordinates, forcesCenter) {
 
 
 function calculateAngle(a) {
-	var b = zeroPoint;
-	var c = xAxisPoint;
+	b = zeroPoint;
+	c = xAxisPoint;
 	var ab = Math.sqrt(Math.pow(b.get_x() - a.get_x(), 2) + Math.pow(b.get_y() - a.get_y(), 2));
 	var bc = Math.sqrt(Math.pow(b.get_x() - c.get_x(), 2) + Math.pow(b.get_y() - c.get_y(), 2));
 	var ac = Math.sqrt(Math.pow(c.get_x() - a.get_x(), 2) + Math.pow(c.get_y() - a.get_y(), 2));

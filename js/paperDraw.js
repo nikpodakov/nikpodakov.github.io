@@ -1,86 +1,136 @@
-/**
- * Created by Nikita on 29.05.2014.
- */
-
-var paths = [];
+var paths = null;
 var paperCanvas;
+var EPSILON = 0.00001;
+
+var lastTimeout = null;
 
 function paperInit() {
-	paper.install(window);
-	var buttonsDiv = document.getElementById("buttons");
+    paperCanvas = document.getElementById("paperCanvas");
+    paperCanvas.width  = window.innerWidth/* / 2*/;
+    paperCanvas.height = window.innerHeight/* - buttonsDiv.offsetHeight*/;
+
+    paper.install(window);
 	paper.setup('paperCanvas');
-	paperCanvas = document.getElementById("paperCanvas");
-	paperCanvas.width  = window.innerWidth / 2;
-	paperCanvas.height = window.innerHeight - buttonsDiv.offsetHeight;
-	paths = [];
-	var tool = new paper.Tool();
-	tool.onMouseDown = function(event) {
-		if (paths[paths.length-1]) {
-			paths[paths.length-1].selected = false;
-		}
-		var path = new Path({
-			strokeColor : 'black',
-			strokeWidth: 1,
-			fullySelected : true
-		});
-		path.add(event.point);
-		paths.push(path);
-	};
+    var tool = new paper.Tool();
 
-	tool.onMouseDrag = function(event) {
-		var path = paths[paths.length-1];
-		path.add(event.point);
-	};
+    var mouseDown = function(event) {
+        if (lastTimeout != null){
+            window.clearTimeout(lastTimeout);
+            lastTimeout = null;
+        }
 
-	tool.onMouseUp = function(event) {
-		var path = paths[paths.length-1];
-		if (path.segments.length == 1) {
-			path.add(new Point(path.firstSegment.point.x+1, path.firstSegment.point.y));
-		}
-		path.selected = false;
-		take_point();
-	};
+        var path = new Path({
+            strokeColor : '#E4141B',
+            strokeWidth: 7,
+            strokeCap: 'round',
+            fullySelected : false
+        });
+        path.add(event.point);
+        if (paths == null) {
+            paths = [];
+        }
+        paths.push(path);
+    };
+	tool.onMouseDown = mouseDown;
+
+    var mouseDrag = function(event) {
+        var path = paths[paths.length-1];
+        path.add(event.point);
+    };
+	tool.onMouseDrag = mouseDrag;
+
+    var mouseUp = function(event) {
+        var path = paths[paths.length-1];
+        if (path.segments.length == 1) {
+            path.add(new Point(path.firstSegment.point.x+1, path.firstSegment.point.y));
+        }
+        path.simplify(100);
+
+        lastTimeout = window.setTimeout(process, 1000);
+    };
+	tool.onMouseUp = mouseUp;
 }
 
-function take_point() {
-	var lastPath = paths[paths.length-1];
-	var lastPathRaster = lastPath.rasterize();
-	var lastPathCanvas = lastPathRaster.canvas;
-	var sparse_border = get_support_points(lastPathCanvas);
-	var tensionScroll = document.getElementById("tension");
-	var curve = get_bezier_points(sparse_border, tensionScroll != null ? tensionScroll.value : 0.9, 0.1);
-	draw_bezier_points(paperCanvas, curve, 'blue');
+function process() {
+    var currentPaths = paths;
+    paths = null;
 
-	var imgData = lastPathCanvas.getContext('2d').getImageData(0, 0, lastPathCanvas.width,lastPathCanvas.height);
-	document.getElementById('canvas').getContext('2d').putImageData(imgData, lastPathRaster.bounds.x, lastPathRaster.bounds.y);
+    if (bun.bunCenter == null) {
+        var bunContourIndex;
+        var bunContourMaxLength = -1;
+        for (var i = 0; i < currentPaths.length; i++) {
+            var l = currentPaths[i].segments.length;
+            if (l > bunContourMaxLength) {
+                bunContourMaxLength = l;
+                bunContourIndex = i;
+            }
+        }
+	    var bunContour = currentPaths[bunContourIndex];
+	    var otherPaths = [];
+	    for (var i = 0; i < currentPaths.length; i++) {
+		    if(i != bunContourIndex) {
+			    currentPaths[i].flatten(20);
+			    otherPaths.push(currentPaths[i].segments);
+		    }
+	    }
+	    var otherContours = [];
+	    otherPaths.forEach(function (path) {
+			var points = [];
+		    path.forEach(function (segment) {
+			    points.push(getWorldPointFromPixelPoint({ x:segment.point.x, y:segment.point.y}));
+		    });
+		    otherContours.push(points);
+		});
+
+        var bunContourPoints = takeBunPoints(bunContour);
+
+        var firstPoint = bunContourPoints[0];
+        var lastPoint = bunContourPoints[bunContourPoints.length - 1];
+	    if (Math.abs(firstPoint.x - lastPoint.x) < EPSILON && Math.abs(firstPoint.y - lastPoint.y) < EPSILON) {
+            bunContourPoints.pop();
+        }
+
+        bun.buildBun(world, bunContourPoints, otherContours);
+    }
+
+    for (var i = 0; i < currentPaths.length; i++) {
+//        currentPaths[i].visible = false;
+        var r = currentPaths[i].remove();
+        var a = 0;
+    }
+    paper.view.update();
+}
+
+function takeBunPoints(contour) {
+	var contourRaster = contour.rasterize();
+	var contourCanvas = contourRaster.canvas;
+	var sparse_border = get_support_points(contourCanvas);
+    var tensionScroll = document.getElementById("tension");
+	var curve = get_bezier_points(sparse_border, tensionScroll != null ? tensionScroll.value : 0.9, 0.1);
 
 	var tmpPath = new Path({
 		strokeWidth: 1,
 		fullySelected : false,
-		visible : false
+		visible : true
 	});
 	for (var i = 0; i < curve.length; i++) {
-		var point = new Point(curve[i][0], curve[i][1]);
-		tmpPath.add(point);
+		var p = new Point(curve[i][0], curve[i][1]);
+		tmpPath.add(p);
 	}
-	tmpPath.smooth();
-	tmpPath.remove();
-
-	lastPath.remove();
-	paper.project.clear();
 
 	var points = [];
-	var step = tmpPath.length / 20;
+	var step = tmpPath.length / 17;
 	for (var offset = 0; offset < tmpPath.length; offset += step) {
 		var point = tmpPath.getPointAt(offset);
-		point.x += lastPathRaster.bounds.x;
-		point.y += lastPathRaster.bounds.y;
+		point.x += contourRaster.bounds.x;
+		point.y += contourRaster.bounds.y;
 		points.push(point);
 	}
+    contourRaster.remove();
 	var createBunPoints = [];
-	points.forEach(function outputItem(item, i, arr) {
-		// showPt(item.x, item.y, 'red', getId('canvas'));
-		createBunPoints.push(getInvertWorldPointFromPixelPoint(item));
+	points.forEach(function (item) {
+		createBunPoints.push(getWorldPointFromPixelPoint(item));
 	});
-	bun.buildBun(world, createBunPoints);
+
+    return createBunPoints;
 }

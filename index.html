@@ -2,11 +2,6 @@
 
 <head>
     <title>Bun ver.2</title>
-
-    <script>
-        var Module = { TOTAL_MEMORY: 128*1024*1024 };
-    </script>
-
     <script type="text/javascript" src="js/box2d/box2d.js"></script>
     <script type="text/javascript" src="js/box2d/embox2d-helpers.js"></script>
     <script type="text/javascript" src="js/box2d/embox2d-html5canvas-debugDraw.js"></script>
@@ -15,6 +10,10 @@
     <script type="text/javascript" src="js/ground.js"></script>
     <script type="text/javascript" src="js/forces.js"></script>
     <script type="text/javascript" src="js/bun.js"></script>
+
+    <script type="text/javascript" src="js/mouseJoint.js"></script>
+    <script type="text/javascript" src="js/keyboardKeys.js"></script>
+
     <script type="text/javascript" src="js/bunBox2d-helpers.js"></script>
 
     <script src='js/jquery/jquery.js'></script>
@@ -22,16 +21,30 @@
     <script src='js/convex2.js'></script>
     <script src='js/paperDraw.js'></script>
 
+    <script type="application/javascript">
+        function htmlInit() {
+            canvas = document.getElementById("canvas");
+            var buttonsDiv = document.getElementById("buttons");
+            context = canvas.getContext( '2d' );
+            canvas.width  = window.innerWidth/* / 2*/;
+            canvas.height = window.innerHeight/* - buttonsDiv.offsetHeight*/;
+            canvasOffset.x = canvas.width / 2;
+            canvasOffset.y = canvas.height / 2;
+            viewCenterPixel.x = canvas.width / 2;
+            viewCenterPixel.y = canvas.height / 2;
+        }
 
+    </script>
     <script type="text/javascript">
         window.onload = function() {
-
+            htmlInit();
             paperInit();
 
             using(Box2D, "b2.+");
-            initHtmlElements();
-            init();
-            createWorld();
+            var world = createWorld();
+            //initMouseJoint(canvas, world);
+            initKeyboardKeys();
+            initForcesVectors();
             animate();
         };
 
@@ -47,8 +60,8 @@
     </style>
 </head>
 <body>
-<div id="container" style="text-align: center;">
-    <div id="buttons" style="align-items: center;">
+<div id="container">
+    <div id="buttons" align="center">
         <button onclick="directForces(-1)">Direct wind to left</button>
         <button onclick="directForces(1)">Direct wind to right</button>
         <button onclick="strengthenForces()">Strengthen wind</button>
@@ -57,14 +70,13 @@
         <button onclick="createGoodBridge()">Create good bridge</button>
         <button onclick="createBadBridge()">Create bad bridge</button>
         <button onclick="destroyBridge()">Destroy bridge</button>
+        <button onclick="run = false">Pause</button>
+        <button onclick="run = true; animate()">Play</button>
     </div>
-    <div style="height:94%;">
-        <div style="float:left;">
-            <canvas id="canvas"></canvas>
-        </div>
-        <div style="background-color:#FFD700;float:right;">
-            <canvas id="paperCanvas"></canvas>
-        </div>
+    <div style="height:100%; width:100%; position: absolute">
+        <canvas id="paperCanvas" style="z-index: 3; position: absolute"></canvas>
+        <canvas id="drawCanvas" style="z-index: 2; position: absolute"></canvas>
+        <canvas id="canvas" style="z-index: 1; position: absolute"></canvas>
     </div>
 </div>
 

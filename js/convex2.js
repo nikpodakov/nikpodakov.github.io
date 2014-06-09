@@ -92,7 +92,7 @@ function get_support_points(canvas) {
 		var points = find_non_zeros(dt,canvas);
 		ch = edge_to_seq(getConvexHull(points));
 	//}
-	var distScroll = document.getElementById("dist");
+    var distScroll = document.getElementById("dist");
 
 	var dst_min = distScroll != null ? distScroll.value : 60;
 	sparse_border = [];

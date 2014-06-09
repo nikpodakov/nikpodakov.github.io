@@ -9,15 +9,23 @@ function acquireCircleCoords(count, cX, cY, radius) {
     return coordsList;
 }
 
-function angleBetween(a, b, c) {
-    if (c == null) {
-        c = { x: b.x + 1, y: b.y };
-    }
+function angleBetween(A, B, C) {
+	if (C == null) {
+		C = { x: B.x + 1, y: B.y};
+	}
+	var upper = (A.x - B.x) * (C.x - B.x) + (A.y - B.y) * (C.y - B.y);
+	var lower = Math.sqrt(Math.pow(A.x - B.x, 2) + Math.pow(A.y - B.y, 2)) * Math.sqrt(Math.pow(C.x - B.x, 2) + Math.pow(C.y - B.y, 2));
+	var cosAlpha = upper / lower;
+	return Math.acos(cosAlpha);
+}
 
-    var ab = Math.sqrt(Math.pow(b.x - a.x, 2) + Math.pow(b.y - a.y, 2));    
-    var bc = Math.sqrt(Math.pow(b.x - c.x, 2) + Math.pow(b.y - c.y, 2)); 
-    var ac = Math.sqrt(Math.pow(c.x - a.x, 2) + Math.pow(c.y - a.y, 2));
-    return Math.acos((Math.pow(bc, 2) + Math.pow(ab, 2) - Math.pow(ac, 2)) / (2 * bc * ab));
+function angleBetweenWithSign(A, B, C) {
+	if (C == null) {
+		C = { x: B.x + 1, y: B.y};
+	}
+	var angle = -1 * Math.atan2((A.x -  B.x) * (C.y - B.y) - (A.y -  B.y) * (C.x - B.x),
+			(A.x -  B.x) * (C.x - B.x) + (A.y -  B.y) * (C.y - B.y));
+	return angle > 0 ? angle : angle + Math.PI * 2;
 }
 
 function createDistanceJoint(world, b1, b2, b1Anchor, b2Anchor) {
@@ -59,3 +67,4 @@ function createRopeJoint(world, b1, b2, b1Anchor, b2Anchor, maxLength) {
     var joint = world.CreateJoint(ropeJoint);
     return joint;
 }
+

@@ -14,7 +14,7 @@ var position;
 var bodyDef;
 var fixtureDef;
 var bridgeStartX = 160;
-var bridgeLength = 35;
+var bridgeLength = 30;
 var bridgeHeight = 4;
 var bridge;
 var bridgeCreated = false;
@@ -103,19 +103,6 @@ function createGround () {
 	body.CreateFixture(fixtureDef);
 }
 
-function createBridgeByVertices(chainVerticesList) {
-	if(!bridgeCreated) {
-		var polygonShape = createChainShape(chainVerticesList);
-		fixtureDef.set_shape(polygonShape);
-		fixtureDef.set_friction(boundsFriction);
-		bodyDef.set_type(b2_staticBody);
-		bodyDef.set_position(position);
-		bridge = world.CreateBody(bodyDef);
-		bridge.CreateFixture(fixtureDef);
-		bridgeCreated = true;
-	}
-}
-
 function createGoodBridge () {
 	if(!bridgeCreated) {
 		var polygonVerticesList = [];
@@ -186,23 +173,7 @@ function createFirmament () {
 }
 
 function createSpringboards () {
-
 	polygonVerticesList = [];
-	polygonVerticesList.push(new b2Vec2(10, 1));
-	polygonVerticesList.push(new b2Vec2(26, 7));
-	polygonVerticesList.push(new b2Vec2(32, 1));
-	polygonVerticesList.push(new b2Vec2(26, 1));
-	polygonVerticesList.push(new b2Vec2(32, 7));
-	polygonVerticesList.push(new b2Vec2(38, 1));
-	polygonShape = createChainShape(polygonVerticesList);
-	fixtureDef.set_shape(polygonShape);
-	fixtureDef.set_friction(boundsFriction);
-	bodyDef.set_type(b2_staticBody);
-	bodyDef.set_position(position);
-	body = world.CreateBody(bodyDef);
-	body.CreateFixture(fixtureDef);
-
-	/*polygonVerticesList = [];
 	polygonVerticesList.push(new b2Vec2(10, 0));
 	polygonVerticesList.push(new b2Vec2(26, 6));
 	polygonShape = createChainShape(polygonVerticesList);
@@ -236,5 +207,5 @@ function createSpringboards () {
 	bodyDef.set_type(b2_staticBody);
 	bodyDef.set_position(position);
 	body = world.CreateBody(bodyDef);
-	body.CreateFixture(fixtureDef);*/
+	body.CreateFixture(fixtureDef);
 }

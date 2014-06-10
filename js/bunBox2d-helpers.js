@@ -1,11 +1,9 @@
 function acquireCircleCoords(count, cX, cY, radius) {
     var coordsList = [];
-
     for (var i = 0; i < count; i++){
         var angle = Math.PI * 2 / count * i;
         coordsList.push({ x: cX + Math.cos(angle) * radius, y: cY + Math.sin(angle) * radius });
     }
-
     return coordsList;
 }
 
@@ -33,9 +31,7 @@ function createDistanceJoint(world, b1, b2, b1Anchor, b2Anchor) {
     distanceJoint.Initialize(b1, b2, b1Anchor, b2Anchor);
     // var wpA = copyVec2(vertex.GetWorldPoint(distanceJoint.get_localAnchorA()));
     // var wpB = copyVec2(edge.GetWorldPoint(distanceJoint.get_localAnchorB()));
-
     // var d = new b2Vec2(wpB.get_x() - wpA.get_x(), wpB.get_y() - wpA.get_y());
-
     // distanceJoint.set_length(d.Length());
     // distanceJoint.set_frequencyHz = 4.0;
     // distanceJoint.set_dampingRatio = 0.5;
@@ -67,4 +63,3 @@ function createRopeJoint(world, b1, b2, b1Anchor, b2Anchor, maxLength) {
     var joint = world.CreateJoint(ropeJoint);
     return joint;
 }
-

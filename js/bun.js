@@ -127,7 +127,7 @@ var bun = {
 		var ballShape = new b2CircleShape();
 		ballShape.set_m_radius(radius);
 		var ballBd = new b2BodyDef();
-//        ballBd.set_type(b2_staticBody);
+		//ballBd.set_type(b2_staticBody);
 		ballBd.set_type(b2_dynamicBody);
 		ballBd.set_position(new b2Vec2(x, y));
 		ballBd.set_fixedRotation(true);

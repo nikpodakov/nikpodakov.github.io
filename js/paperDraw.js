@@ -1,7 +1,6 @@
 var paths = null;
 var paperCanvas;
 var EPSILON = 0.00001;
-
 var lastTimeout = null;
 
 function paperInit() {
@@ -50,16 +49,109 @@ function paperInit() {
     };
 	tool.onMouseUp = mouseUp;
 }
+function toSmallCanvas(paths) {
+    var minX = 100000;
+    var maxX = 0;
+    var minY = 100000;
+    var maxY = 0;
+
+    var widths = [];
+    paths.forEach(function(path) {
+        widths.push(path.strokeWidth);
+        path.strokeWidth = 30;
+    });
+    paper.view.update();
+
+    paths.forEach(function(path) {
+        var bounds = path.strokeBounds;
+        if (minX > bounds.x) {
+            minX = bounds.x;
+        }
+        if (maxX < bounds.x + bounds.width) {
+            maxX = bounds.x + bounds.width;
+        }
+        if (minY > bounds.y) {
+            minY = bounds.y;
+        }
+        if (maxY < bounds.y + bounds.height) {
+            maxY = bounds.y + bounds.height;
+        }
+    });
+    var bBoxWidth = maxX - minX;
+    var bBoxHeight = maxY - minY;
+    var smallCanvas = document.getElementById("smallCanvas");
+    var smallContext = smallCanvas.getContext("2d");
+    var w = smallCanvas.width;
+    var h = smallCanvas.height;
+    var bBoxRatio = bBoxWidth / bBoxHeight;
+    var smallCanvasRatio = w / h;
+    var smallCanvasStartX = w * 0.1;
+    var smallCanvasStartY = h * 0.1;
+    var smallCanvasWidth = w * 0.8;
+    var smallCanvasHeight = h * 0.8;
+    if (bBoxRatio < 1) {
+        smallCanvasStartX += (1 - bBoxRatio) / 2 * w;
+        smallCanvasWidth /= smallCanvasRatio / bBoxRatio;
+    } else {
+        smallCanvasStartY += (bBoxRatio - 1) / 2 * h / bBoxRatio;
+        smallCanvasHeight *= smallCanvasRatio / bBoxRatio;
+    }
+    smallCanvas.width = w;
+    smallContext.drawImage(paperCanvas, minX, minY, bBoxWidth, bBoxHeight,
+        smallCanvasStartX, smallCanvasStartY, smallCanvasWidth, smallCanvasHeight);
+    paths.forEach(function (path, index) {
+        path.strokeWidth = widths[index];
+    });
+    widths = null;
+}
+
+function canvasToAlphaArray(canvas) {
+    var ctx = canvas.getContext("2d");
+    var h = canvas.height;
+    var w = canvas.width;
+
+    var imgData = ctx.getImageData(0, 0, w, h);
+    var data = imgData.data;
+
+    var canvas_array = [];
+    for(var i = 0; i < h; i++) {
+        for(var j = 0; j < w; j++) {
+            canvas_array.push(data[4 * i * w + 4 * j + 3]);
+        }
+    }
+    return canvas_array;
+}
+
+function classifyA(canvas, net_id) {
+    /*
+     var canvas = document.getElementById(canvas_id);
+     var img28 = get_small_image2(canvas_id,0,0,canvas.width,canvas.height);
+     */
+    var img28 = canvasToAlphaArray(canvas);
+    var img_fit = fit_image(img28);
+    x = convnetjs.augment(img_fit, 24);
+    net_id.forward(x);
+    var ans = net_id.getPrediction();
+    return ans;
+}
 
 function process() {
     var currentPaths = paths;
     paths = null;
 
+    /*toSmallCanvas(currentPaths);
+
+    var smallCanvas = document.getElementById("smallCanvas");
+    var ans = classifyA(smallCanvas, net1);
+    var sAns = class_list1[ans - 1];
+    document.getElementById("message").innerText = sAns;*/
+
+
     if (bun.bunCenter == null) {
         var bunContourIndex;
         var bunContourMaxLength = -1;
         for (var i = 0; i < currentPaths.length; i++) {
-            var l = currentPaths[i].segments.length;
+            var l = currentPaths[i].length;
             if (l > bunContourMaxLength) {
                 bunContourMaxLength = l;
                 bunContourIndex = i;

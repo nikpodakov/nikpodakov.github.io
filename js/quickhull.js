@@ -15,13 +15,11 @@ function getRandomPoints(numPoint, xMax, yMax) {
     return points
 }
 
-
 function getDistant(cpt, bl) {
     Vy = bl[1][0] - bl[0][0];
     Vx = bl[0][1] - bl[1][1];
     return (Vx * (cpt[0] - bl[0][0]) + Vy * (cpt[1] -bl[0][1]))
 }
-
 
 function findMostDistantPointFromBaseLine(baseLine, points) {
     var maxD = 0;
@@ -46,9 +44,6 @@ function findMostDistantPointFromBaseLine(baseLine, points) {
     return {'maxPoint':maxPt, 'newPoints':newPoints}
 }
 
-
-
-
 var allBaseLines = new Array();
 function buildConvexHull(baseLine, points) {
 
@@ -64,7 +59,6 @@ function buildConvexHull(baseLine, points) {
         return [baseLine];
     }
 }
-
 
 function getConvexHull(points) {
     //find first baseline
@@ -86,36 +80,29 @@ function getConvexHull(points) {
     return ch;
 }
 
-
 function plotBaseLine(baseLine,color) {
-    var ctx = document.getElementById('qh_demo').getContext('2d');
     var pt1 = baseLine[0]
     var pt2 = baseLine[1];
-    ctx.save()
-    ctx.strokeStyle = color;
-    ctx.beginPath();
-    ctx.moveTo(pt1[0],pt1[1]);
-    ctx.lineTo(pt2[0],pt2[1]);
-    ctx.stroke();
-    ctx.restore();
+    quickHullContext.save()
+    quickHullContext.strokeStyle = color;
+    quickHullContext.beginPath();
+    quickHullContext.moveTo(pt1[0],pt1[1]);
+    quickHullContext.lineTo(pt2[0],pt2[1]);
+    quickHullContext.stroke();
+    quickHullContext.restore();
 }
-
-
 
 var pts;
 
 function qhPlotPoints() {
-    ctx = document.getElementById('qh_demo').getContext('2d');
-    ctx.clearRect(0,0,200,200);
-    ctx.fillStyle = 'rgb(0,0,0)';
+    quickHullContext.clearRect(0,0,200,200);
+    quickHullContext.fillStyle = 'rgb(0,0,0)';
     pts = getRandomPoints(250,200,200);
     for (var idx in pts) {
         var pt = pts[idx];
-        ctx.fillRect(pt[0],pt[1],2,2);
+        quickHullContext.fillRect(pt[0],pt[1],2,2);
     }
 }
-
-
 
 function qhPlotConvexHull() {
     var ch = getConvexHull(pts);

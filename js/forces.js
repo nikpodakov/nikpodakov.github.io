@@ -78,7 +78,6 @@ function calculateForceVector(vertexCoordinates, forcesCenter) {
 	return forceVector;
 }
 
-
 function calculateAngle(a) {
 	b = zeroPoint;
 	c = xAxisPoint;

@@ -1,7 +1,8 @@
+<!DOCTYPE html>
 <html>
-
 <head>
-	<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Bun ver.2</title>
     <script type="text/javascript" src="js/box2d/box2d.js"></script>
     <script type="text/javascript" src="js/box2d/embox2d-helpers.js"></script>
@@ -22,12 +23,17 @@
     <script src='js/convex2.js'></script>
     <script src='js/paperDraw.js'></script>
 
+    <script src="js/recognizer/load_net.js"></script>
+    <script src="js/recognizer/fromHtml.js"></script>
+    <script src="js/recognizer/convnet.js"></script>
+    <script src="js/recognizer/recognize.js"></script>
+
     <script type="application/javascript">
         function htmlInit() {
             canvas = document.getElementById("canvas");
             var buttonsDiv = document.getElementById("buttons");
             context = canvas.getContext( '2d' );
-            canvas.width  = window.innerWidth/* / 2*/;
+            canvas.width = window.innerWidth/* / 2*/;
             canvas.height = window.innerHeight/* - buttonsDiv.offsetHeight*/;
             canvasOffset.x = canvas.width / 2;
             canvasOffset.y = canvas.height / 2;
@@ -37,6 +43,8 @@
 
     </script>
     <script type="text/javascript">
+        var class_list1 = ['just circle', 'circle and eyes', 'circle and mouth', 'арийский колобок', 'колобок-инвалид'];
+
         window.onload = function() {
             htmlInit();
             paperInit();
@@ -47,8 +55,14 @@
             initKeyboardKeys();
             initForcesVectors();
             animate();
-        };
 
+            /*load_classifier('http://mrtgo.com/jscode/dirtmp/net_new.txt');
+            net1get = setInterval(getnet1, 3000);
+            a = 1;
+            var data;
+            data_loaded = false;
+            load_from_server();*/
+        };
     </script>
     <style>
         body, html {
@@ -78,6 +92,8 @@
         <canvas id="paperCanvas" style="z-index: 3; position: absolute"></canvas>
         <canvas id="drawCanvas" style="z-index: 2; position: absolute"></canvas>
         <canvas id="canvas" style="z-index: 1; position: absolute"></canvas>
+        <canvas id="smallCanvas" width="28" height="28" style="z-index: 4; position: absolute"></canvas>
+        <div id="message" style="position: absolute; right: 0px; top: 0px"></div>
     </div>
 </div>
 

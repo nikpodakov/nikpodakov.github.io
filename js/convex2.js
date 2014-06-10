@@ -37,7 +37,7 @@ function find_non_zeros(dt, canvas) {
 	return arr_nz;
 }
 
-function augment_pointset(ch, dst_max) {	
+function augment_pointset(ch, dst_max) {
 	var chcp = JSON.parse(JSON.stringify(ch));
 	chcp.push(ch[0]);
 	var augmented_set = [];
@@ -140,7 +140,6 @@ function getDistant(cpt, bl) {
     return (Vx * (cpt[0] - bl[0][0]) + Vy * (cpt[1] -bl[0][1]))
 }
 
-
 function findMostDistantPointFromBaseLine(baseLine, points) {
     var maxD = 0;
     var maxPt = new Array();
@@ -222,7 +221,6 @@ function getRandomPoints(numPoint, xMax, yMax) {
     return points
 }
 
-
 function plotBaseLine(baseLine,color) {
     var ctx = document.getElementById('qh_demo').getContext('2d');
     var pt1 = baseLine[0]
@@ -234,9 +232,7 @@ function plotBaseLine(baseLine,color) {
     ctx.lineTo(pt2[0],pt2[1]);
     ctx.stroke();
     ctx.restore();
-}   
-
-
+}
 
 var pts;
 
@@ -250,8 +246,6 @@ function qhPlotPoints() {
         ctx.fillRect(pt[0],pt[1],2,2);
     }
 }
-
-
 
 function qhPlotConvexHull() {
     var ch = getConvexHull(pts);

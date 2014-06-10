@@ -80,7 +80,6 @@ function onMouseMove(canvas, evt) {
 }
 
 function startMouseJoint() {
-
     if ( mouseJoint != null )
         return;
 
@@ -90,7 +89,7 @@ function startMouseJoint() {
     aabb.set_lowerBound(new b2Vec2(mousePosWorld.x - d, mousePosWorld.y - d));
     aabb.set_upperBound(new b2Vec2(mousePosWorld.x + d, mousePosWorld.y + d));
 
-    // Query the world for overlapping shapes.            
+    // Query the world for overlapping shapes.
     myQueryCallback.m_fixture = null;
     myQueryCallback.m_point = new b2Vec2(mousePosWorld.x, mousePosWorld.y);
     world.QueryAABB(myQueryCallback, aabb);

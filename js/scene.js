@@ -37,7 +37,6 @@ function setViewCenterWorld(b2VecPos) {
 }
 
 function createWorld() {
-
     if ( world != null ) {
         Box2D.destroy(world);
     }
@@ -58,20 +57,15 @@ function createWorld() {
 function debugDraw() {
     context.fillStyle = 'rgb(0,0,0)';
     context.fillRect(0, 0, canvas.width, canvas.height);
-
     context.save();
     context.translate(canvasOffset.x, canvasOffset.y);
     context.scale(1,-1);
     context.scale(PTM,PTM);
     context.lineWidth /= PTM;
-
     drawAxes(context);
-
     context.fillStyle = 'rgb(255,255,0)';
     world.DrawDebugData();
-
     drawMouseJoint();
-
     context.restore();
 }
 
@@ -91,10 +85,12 @@ function step() {
     var bunCenter = bun.getBunCenter();
     applyForces(bun.verticesList, bunCenter);
 	viewCenterWorld.set_x((bunCenter != null ? bunCenter.get_x() : 0.0));
-	//viewCenterWorld.set_y((bunCenter != null ? bunCenter.get_y() : 0.0));
+	viewCenterWorld.set_y((bunCenter != null ? bunCenter.get_y() + 3 : 5.0));
 	setViewCenterWorld(viewCenterWorld);
     //debugDraw();
-    drawBun();
+	drawWorldBounds();
+	drawBridge();
+	drawBun();
 	drawBunContent();
 }
 
@@ -106,6 +102,8 @@ function animate() {
 
 var lastDrawnBun = null;
 var lastDrawOtherPaths = [];
+var lastDrawWorldBounds = null;
+var lastDrawBridge = null;
 
 function drawBun() {
     if (bun.bunCenter == null) {
@@ -118,17 +116,35 @@ function drawBun() {
 
     var path = new Path({
         strokeColor: 'red',
-        strokeWidth: 2,
+        strokeWidth: 7,
         closed: true
-    })
+    });
     bun.verticesList.forEach(function(vertex) {
-        var vertexCenter = vertex.GetWorldCenter()
+        var vertexCenter = vertex.GetWorldCenter();
         var p = getPixelPointFromWorldPoint(vertexCenter);
         path.add(p);
     });
     path.smooth();
     lastDrawnBun = path;
     paper.view.update();
+}
+
+function drawWorldBounds() {
+	if (lastDrawWorldBounds != null) {
+		lastDrawWorldBounds.remove();
+	}
+
+	lastDrawWorldBounds = new Path({
+		strokeColor: 'green',
+		strokeWidth: 10,
+		closed: true
+	});
+	contour.forEach(function(vertex) {
+		var p = getPixelPointFromWorldDot(vertex);
+		lastDrawWorldBounds.add(p);
+	});
+	//lastDrawWorldBounds.smooth();
+	paper.view.update();
 }
 
 function drawBunContent() {
@@ -143,8 +159,8 @@ function drawBunContent() {
 			lastDrawOtherPaths[i].remove();
 		}
 		lastDrawOtherPaths[i] = new Path({
-			strokeColor: 'red',
-			strokeWidth: 2
+			strokeColor: 'blue',
+			strokeWidth: 5
 		});
 		var bunOtherPathsData = bun.otherPathsData[i].length;
 		for (var j = 0; j < bunOtherPathsData; j++) {
@@ -400,4 +416,24 @@ function drawBunContent1() {
 
 	//alert(newPointPosition.x+' '+newPointPosition.y);
 	return newPointPosition;
+}
+
+function drawBridge() {
+	if (lastDrawBridge != null) {
+		lastDrawBridge.remove();
+	}
+	if(!bridgeCreated) {
+		return;
+	}
+
+	lastDrawBridge = new Path({
+		strokeColor: 'green',
+		strokeWidth: 10
+	});
+	bridgeVertices.forEach(function(vertex) {
+		var p = getPixelPointFromWorldDot({x:vertex.x, y:vertex.y + 0.2});
+		lastDrawBridge.add(p);
+	});
+	//lastDrawBridge.smooth();
+	paper.view.update();
 }

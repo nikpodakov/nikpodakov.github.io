@@ -37,7 +37,7 @@ function strengthenForces() {
 }
 
 function setForcesValue(value) {
-	forcesValue = bun.vertexMass * 10;
+	forcesValue = bun.vertexMass * 3;
 	if(value != null) {
 		forcesValue = bun.vertexMass * value;
 	}

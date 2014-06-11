@@ -110,7 +110,9 @@ function startMouseJoint() {
 }
 
 function onMouseDown(canvas, evt) {
-    updateMousePos(canvas, evt);
+	document.getElementById("debugMessage").innerText = evt.clientX + ' ' + evt.clientY + '\n'
+		+ evt.clientHeight + ' ' + evt.clientWidth + '\n' + canvas.innerHeight() + ' ' + canvas.innerWidth();
+	updateMousePos(canvas, evt);
     if ( !mouseDown )
         startMouseJoint();
     mouseDown = true;

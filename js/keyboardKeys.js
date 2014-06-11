@@ -1,6 +1,11 @@
 function initKeyboardKeys() {
     window.addEventListener("keydown", keyPress, false);
     window.addEventListener("keyup", keyRelease, false);
+	window.addEventListener("mousedown", function (evt) {
+			document.getElementById("debugMessage").innerText = evt.clientX + ' ' + evt.clientY + '\n' +
+				evt.clientWidth + ' ' + evt.clientHeight + '\n' + canvas.width + ' ' + canvas.height + '\n' +
+				window.innerWidth + ' ' + window.innerHeight;
+	});
 }
 
 function keyPress(e) {

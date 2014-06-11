@@ -159,7 +159,8 @@ function drawBunContent() {
 			lastDrawOtherPaths[i].remove();
 		}
 		lastDrawOtherPaths[i] = new Path({
-			strokeColor: 'blue',
+			strokeColor: 'yellow',
+			strokeCap: 'round',
 			strokeWidth: 5
 		});
 		var bunOtherPathsData = bun.otherPathsData[i].length;

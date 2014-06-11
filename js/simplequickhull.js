@@ -5,7 +5,7 @@ function initQuickHull() {
 	quickHullContext = quickHullCanvas.getContext("2d");
 }
 function getRandomPoints(numPoint, xMax, yMax) {
-	var points = new Array();
+	var points = [];
 	var phase = Math.random() * Math.PI * 2;
 	for (var i = 0; i < numPoint/2; i++) {
 		var r =  Math.random()*xMax/4;
@@ -29,8 +29,8 @@ function getDistant(cpt, bl) {
 
 function findMostDistantPointFromBaseLine(baseLine, points) {
 	var maxD = 0;
-	var maxPt = new Array();
-	var newPoints = new Array();
+	var maxPt = [];
+	var newPoints = [];
 	for (var idx in points) {
 		var pt = points[idx];
 		var d = getDistant(pt, baseLine);
@@ -50,12 +50,10 @@ function findMostDistantPointFromBaseLine(baseLine, points) {
 	return {'maxPoint':maxPt, 'newPoints':newPoints}
 }
 
-var allBaseLines = new Array();
+var allBaseLines = [];
 function buildConvexHull(baseLine, points) {
-
-	//plotBaseLine(baseLine,'rgb(180,180,180)');
-	allBaseLines.push(baseLine)
-	var convexHullBaseLines = new Array();
+	allBaseLines.push(baseLine);
+	var convexHullBaseLines = [];
 	var t = findMostDistantPointFromBaseLine(baseLine, points);
 	if (t.maxPoint.length) {
 		convexHullBaseLines = convexHullBaseLines.concat( buildConvexHull( [baseLine[0],t.maxPoint], t.newPoints) );
@@ -82,14 +80,14 @@ function getConvexHull(points) {
 		}
 	}
 	var ch = [].concat(buildConvexHull([minPt, maxPt], points),
-		buildConvexHull([maxPt, minPt], points))
+		buildConvexHull([maxPt, minPt], points));
 	return ch;
 }
 
 function plotBaseLine(baseLine,color) {
-	var pt1 = baseLine[0]
+	var pt1 = baseLine[0];
 	var pt2 = baseLine[1];
-	quickHullContext.save()
+	quickHullContext.save();
 	quickHullContext.strokeStyle = color;
 	quickHullContext.beginPath();
 	quickHullContext.moveTo(pt1[0],pt1[1]);

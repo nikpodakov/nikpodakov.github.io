@@ -21,7 +21,7 @@ function paperInit() {
         var path = new Path({
             strokeColor : '#E4141B',
             strokeWidth: 7,
-            strokeCap: 'round',
+	        strokeCap: 'round',
             fullySelected : false
         });
         path.add(event.point);
@@ -161,7 +161,7 @@ function process() {
 	    var otherPaths = [];
 	    for (var i = 0; i < currentPaths.length; i++) {
 		    if(i != bunContourIndex) {
-			    currentPaths[i].flatten(20);
+			    currentPaths[i].flatten(15);
 			    otherPaths.push(currentPaths[i].segments);
 		    }
 	    }
@@ -174,8 +174,11 @@ function process() {
 		    otherContours.push(points);
 		});
 
-        var bunContourPoints = takeBunPoints(bunContour);
-
+	    var bunContourPoints = takeBunPoints(bunContour);
+		if(!bunContourPoints.length) {
+			alert("Невозможно построить колобка!");
+			return;
+		}
         var firstPoint = bunContourPoints[0];
         var lastPoint = bunContourPoints[bunContourPoints.length - 1];
 	    if (Math.abs(firstPoint.x - lastPoint.x) < EPSILON && Math.abs(firstPoint.y - lastPoint.y) < EPSILON) {
@@ -186,7 +189,6 @@ function process() {
     }
 
     for (var i = 0; i < currentPaths.length; i++) {
-//        currentPaths[i].visible = false;
         var r = currentPaths[i].remove();
         var a = 0;
     }
@@ -194,11 +196,42 @@ function process() {
 }
 
 function takeBunPoints(contour) {
+	contour.flatten(10);
+	var points = [];
+	contour.segments.forEach(function (segment) {
+		points.push([segment.point.x, segment.point.y]);
+	});
+	var curve = edge_to_seq(getConvexHull(points));
+
+	var tmpPath = new Path({
+		strokeWidth: 1,
+		fullySelected : false,
+		visible : true
+	});
+	for (var i = 0; i < curve.length; i++) {
+		var p = new Point(curve[i][0], curve[i][1]);
+		tmpPath.add(p);
+	}
+
+	var points = [];
+	var step = tmpPath.length / 17;
+	for (var offset = 0; offset < tmpPath.length; offset += step) {
+		var point = tmpPath.getPointAt(offset);
+		points.push(point);
+	}
+	var createBunPoints = [];
+	points.forEach(function (item) {
+		createBunPoints.push(getWorldPointFromPixelPoint(item));
+	});
+
+    return createBunPoints;
+}
+
+function takeBunPoints1(contour) {
 	var contourRaster = contour.rasterize();
 	var contourCanvas = contourRaster.canvas;
 	var sparse_border = get_support_points(contourCanvas);
-    var tensionScroll = document.getElementById("tension");
-	var curve = get_bezier_points(sparse_border, tensionScroll != null ? tensionScroll.value : 0.9, 0.1);
+	var curve = get_bezier_points(sparse_border, 0.9, 0.1);
 
 	var tmpPath = new Path({
 		strokeWidth: 1,
@@ -218,11 +251,11 @@ function takeBunPoints(contour) {
 		point.y += contourRaster.bounds.y;
 		points.push(point);
 	}
-    contourRaster.remove();
+	contourRaster.remove();
 	var createBunPoints = [];
 	points.forEach(function (item) {
 		createBunPoints.push(getWorldPointFromPixelPoint(item));
 	});
 
-    return createBunPoints;
+	return createBunPoints;
 }

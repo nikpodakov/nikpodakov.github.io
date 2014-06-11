@@ -12,6 +12,17 @@ var bun = {
 	buildBun: function (world, verticesCoordsList, otherContours) {
 		this.world = world;
 		this.bunCenter = new b2Vec2(0,0);
+		var minDist = 1000000;
+		for(var i = 0; i < verticesCoordsList.length; i++) {
+			for(var j = i + 1; j < verticesCoordsList.length; j++) {
+				var dist = Math.sqrt(Math.pow(verticesCoordsList[i].x - verticesCoordsList[j].x, 2) +
+					Math.pow(verticesCoordsList[i].y - verticesCoordsList[j].y, 2));
+				if(dist < minDist) {
+					minDist = dist;
+				}
+			}
+		}
+		this.vertexRadius = minDist / 3 > 0.4 ? 0.4 : minDist / 3 < 0.1 ? 0.1 : minDist / 3;
 
 		var b = this;
 		verticesCoordsList.forEach(function (coord) {

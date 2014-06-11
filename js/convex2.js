@@ -126,19 +126,12 @@ function clearImage(canvas){
 	canvas.width = canvas.width;
 }
 
-function edge_to_seq(edg) {
-	var seq = new Array(edg.length);
-	for (var cnt=0; cnt<edg.length; cnt++) {
-		seq[cnt] = edg[cnt][0];
-	}
-	return seq;
-}
-
 function getDistant(cpt, bl) {
     var Vy = bl[1][0] - bl[0][0];
     var Vx = bl[0][1] - bl[1][1];
     return (Vx * (cpt[0] - bl[0][0]) + Vy * (cpt[1] -bl[0][1]))
 }
+
 
 function findMostDistantPointFromBaseLine(baseLine, points) {
     var maxD = 0;
@@ -147,41 +140,41 @@ function findMostDistantPointFromBaseLine(baseLine, points) {
     for (var idx in points) {
         var pt = points[idx];
         var d = getDistant(pt, baseLine);
-        
+
         if ( d > 0) {
             newPoints.push(pt);
         } else {
             continue;
         }
-        
+
         if ( d > maxD ) {
             maxD = d;
             maxPt = pt;
         }
-    
-    } 
+
+    }
     return {'maxPoint':maxPt, 'newPoints':newPoints}
 }
 
 var allBaseLines = new Array();
 function buildConvexHull(baseLine, points) {
-    
+
     allBaseLines.push(baseLine)
     var convexHullBaseLines = new Array();
     var t = findMostDistantPointFromBaseLine(baseLine, points);
     if (t.maxPoint.length) { // if there is still a point "outside" the base line
-        convexHullBaseLines = 
-            convexHullBaseLines.concat( 
-                buildConvexHull( [baseLine[0],t.maxPoint], t.newPoints) 
+        convexHullBaseLines =
+            convexHullBaseLines.concat(
+                buildConvexHull( [baseLine[0],t.maxPoint], t.newPoints)
             );
-        convexHullBaseLines = 
-            convexHullBaseLines.concat( 
-                buildConvexHull( [t.maxPoint,baseLine[1]], t.newPoints) 
+        convexHullBaseLines =
+            convexHullBaseLines.concat(
+                buildConvexHull( [t.maxPoint,baseLine[1]], t.newPoints)
             );
         return convexHullBaseLines;
     } else {  // if there is no more point "outside" the base line, the current base line is part of the convex hull
         return [baseLine];
-    }    
+    }
 }
 
 function getConvexHull(points) {
@@ -221,6 +214,7 @@ function getRandomPoints(numPoint, xMax, yMax) {
     return points
 }
 
+
 function plotBaseLine(baseLine,color) {
     var ctx = document.getElementById('qh_demo').getContext('2d');
     var pt1 = baseLine[0]
@@ -233,6 +227,8 @@ function plotBaseLine(baseLine,color) {
     ctx.stroke();
     ctx.restore();
 }
+
+
 
 var pts;
 
@@ -247,6 +243,8 @@ function qhPlotPoints() {
     }
 }
 
+
+
 function qhPlotConvexHull() {
     var ch = getConvexHull(pts);
     var eBL = allBaseLines[0];
@@ -256,7 +254,7 @@ function qhPlotConvexHull() {
             plotBaseLine(l, 'rgb(180,180,180)');
             setTimeout(plotIntermediateBL, 250);
         } else {
-            for (var idx in ch) {    
+            for (var idx in ch) {
                 var baseLine = ch[idx];
                 plotBaseLine(baseLine, 'rgb(255,0,0)');
             }
@@ -267,9 +265,9 @@ function qhPlotConvexHull() {
 }
 
 function edge_to_seq(edg) {
-	var seq = new Array(edg.length);
-	for (var cnt=0; cnt<edg.length; cnt++) {
-		seq[cnt] = edg[cnt][0];
+	var seq = [];
+	for (var i = 0; i < edg.length; i++) {
+		seq.push(edg[i][0]);
 	}
 	return seq;
 }

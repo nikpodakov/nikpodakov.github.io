@@ -115,7 +115,7 @@ function drawBun() {
     }
 
     var path = new Path({
-        strokeColor: 'red',
+        strokeColor: '#E4141B',
         strokeWidth: 7,
         closed: true
     });
@@ -159,7 +159,7 @@ function drawBunContent() {
 			lastDrawOtherPaths[i].remove();
 		}
 		lastDrawOtherPaths[i] = new Path({
-			strokeColor: 'yellow',
+			strokeColor: 'red',
 			strokeCap: 'round',
 			strokeWidth: 5
 		});

@@ -33,7 +33,9 @@ function directForces(direction) {
 }
 
 function strengthenForces() {
-	forcesValue += bun.vertexMass * 2;
+	if (forcesValue < bun.vertexMass * 8) {
+		forcesValue += bun.vertexMass * 2;
+	}
 }
 
 function setForcesValue(value) {

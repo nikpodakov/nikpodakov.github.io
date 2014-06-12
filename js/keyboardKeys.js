@@ -11,7 +11,7 @@ function initKeyboardKeys() {
 function keyPress(e) {
     if ( e.keyCode == 32 || e.keyCode == 38) {
         if(!bun.isJumping) {
-            applyImpulses(bun.verticesList, new b2Vec2(0, 80));
+            applyImpulses(bun.verticesList, new b2Vec2(0, 40));
             bun.isJumping = true;
         }
     }

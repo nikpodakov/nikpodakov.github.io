@@ -7,6 +7,21 @@ var canvasOffset = { x: 0, y: 0 };
 var viewCenterPixel = { x: 0, y: 0 };
 var viewCenterWorld;
 
+var lastDrawnBun = null;
+var lastDrawOtherPaths = [];
+var lastDrawWorldBounds = null;
+var lastDrawBridge = null;
+
+var backgroundCanvas = null;
+var backgroundCanvasContext = null;
+var backgroundImage = null;
+
+function initScene() {
+	initKeyboardKeys();
+	initForcesVectors();
+	initBunVariables();
+}
+
 function getWorldPointFromPixelPoint(pixelPoint) {
     return {
         x: (pixelPoint.x - canvasOffset.x) / PTM,
@@ -49,7 +64,7 @@ function createWorld() {
     myDebugDraw.SetFlags(e_shapeBit | e_jointBit);
     world.SetDebugDraw(myDebugDraw);
 
-	createWorldBounds();
+	createWorldBounds(10000, 1500);
 
     return world;
 }
@@ -84,12 +99,19 @@ function step() {
     world.Step(1/60, 3, 2);
     var bunCenter = bun.getBunCenter();
     applyForces(bun.verticesList, bunCenter);
-	viewCenterWorld.set_x((bunCenter != null ? bunCenter.get_x() : 0.0));
-	viewCenterWorld.set_y((bunCenter != null ? bunCenter.get_y() + 3 : 5.0));
+	var newXViewCenter = 600 / PTM;
+	var newYViewCenter = 1600 / PTM;
+    if (bunCenter != null) {
+        newXViewCenter = bunCenter.get_x();
+	    newYViewCenter = bunCenter.get_y() + 140 / PTM;
+    }
+	viewCenterWorld.set_x(newXViewCenter);
+	viewCenterWorld.set_y(newYViewCenter);
 	setViewCenterWorld(viewCenterWorld);
     //debugDraw();
+	drawWorldBackground();
 	drawWorldBounds();
-	drawBridge();
+	//drawBridge();
 	drawBun();
 	drawBunContent();
 }
@@ -99,11 +121,6 @@ function animate() {
         requestAnimFrame( animate );
     step();
 }
-
-var lastDrawnBun = null;
-var lastDrawOtherPaths = [];
-var lastDrawWorldBounds = null;
-var lastDrawBridge = null;
 
 function drawBun() {
     if (bun.bunCenter == null) {
@@ -135,6 +152,28 @@ function drawWorldBounds() {
 	}
 
 	lastDrawWorldBounds = new Path({
+		strokeColor: '#A63800',
+		fillColor: 'white',
+		//strokeColor: 'green',
+		//fillColor: '#A63800',
+		strokeJoin: 'round',
+		strokeCap: 'round',
+		strokeWidth: 10
+	});
+	ground.forEach(function(vertex) {
+		var p = getPixelPointFromWorldDot(vertex);
+		lastDrawWorldBounds.add(p);
+	});
+	//lastDrawWorldBounds.smooth();
+	paper.view.update();
+}
+
+function drawWorldBounds1() {
+	if (lastDrawWorldBounds != null) {
+		lastDrawWorldBounds.remove();
+	}
+
+	lastDrawWorldBounds = new Path({
 		strokeColor: 'green',
 		strokeWidth: 10,
 		closed: true
@@ -145,6 +184,53 @@ function drawWorldBounds() {
 	});
 	//lastDrawWorldBounds.smooth();
 	paper.view.update();
+}
+
+function loadBackground(src) {
+    backgroundImage = new Image();
+    backgroundImage.src = src;
+}
+
+/**
+ * @return {boolean}
+ */
+function imageLoaded(img) {
+    // During the onload event, IE correctly identifies any images that
+    // weren’t downloaded as not complete. Others should too. Gecko-based
+    // browsers act like NS4 in that they report this incorrectly.
+    if (!img.complete) {
+        return false;
+    }
+    // However, they do have two very useful properties: naturalWidth and
+    // naturalHeight. These give the true size of the image. If it failed
+    // to load, either of these should be zero.
+    if (typeof img.naturalWidth !== "undefined" && img.naturalWidth === 0) {
+        return false;
+    }
+    // No other way of checking: assume it’s ok.
+    return true;
+}
+
+function drawWorldBackground() {
+    if (imageLoaded(backgroundImage)) {
+        backgroundCanvas.width = backgroundCanvas.width;
+
+        var clipX = backgroundCanvas.width / 2 - canvasOffset.x * backgroundImage.naturalHeight / backgroundCanvas.height;
+        var lShift = 0;
+        if (clipX < 0) {
+            lShift = -clipX;
+            clipX = 0;
+        }
+        var clipY = 0;
+        var clipW = (backgroundCanvas.width - lShift) * backgroundImage.naturalHeight / backgroundCanvas.height;
+        var clipH = backgroundImage.naturalHeight;
+        backgroundCanvasContext.drawImage(
+            backgroundImage,
+            clipX, clipY,
+            clipW, clipH,
+            lShift, 0, backgroundCanvas.width - lShift, backgroundCanvas.height
+        );
+    }
 }
 
 function drawBunContent() {

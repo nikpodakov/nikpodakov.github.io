@@ -30,11 +30,16 @@
 
     <script type="application/javascript">
         function htmlInit() {
+            loadBackground("images/background.jpg");
             canvas = document.getElementById("canvas");
             var buttonsDiv = document.getElementById("buttons");
             context = canvas.getContext( '2d' );
-            canvas.width = window.innerWidth/* / 2*/;
+            canvas.width = window.innerWidth;
             canvas.height = window.innerHeight/* - buttonsDiv.offsetHeight*/;
+            backgroundCanvas = document.getElementById("backgroundCanvas");
+            backgroundCanvasContext = backgroundCanvas.getContext("2d");
+            backgroundCanvas.width = window.innerWidth;
+            backgroundCanvas.height = window.innerHeight;
             canvasOffset.x = canvas.width / 2;
             canvasOffset.y = canvas.height / 2;
             viewCenterPixel.x = canvas.width / 2;
@@ -52,8 +57,7 @@
             using(Box2D, "b2.+");
             var world = createWorld();
             //initMouseJoint(canvas, world);
-            initKeyboardKeys();
-            initForcesVectors();
+            initScene();
             animate();
 
             /*load_classifier('http://mrtgo.com/jscode/dirtmp/net_new.txt');
@@ -76,7 +80,7 @@
 </head>
 <body>
 <div id="container">
-    <div id="buttons" align="center">
+    <!--div id="buttons" align="center">
         <button onclick="directForces(-1)">Direct wind to left</button>
         <button onclick="directForces(1)">Direct wind to right</button>
         <button onclick="strengthenForces()">Strengthen wind</button>
@@ -87,12 +91,13 @@
         <button onclick="destroyBridge()">Destroy bridge</button>
         <button onclick="run = false">Pause</button>
         <button onclick="run = true; animate()">Play</button>
-    </div>
+    </div-->
     <div style="height:100%; width:100%; position: absolute">
-        <canvas id="paperCanvas" style="z-index: 3; position: absolute"></canvas>
-        <canvas id="drawCanvas" style="z-index: 2; position: absolute"></canvas>
-        <canvas id="canvas" style="z-index: 1; position: absolute"></canvas>
-        <canvas id="smallCanvas" width="28" height="28" style="z-index: 4; position: absolute"></canvas>
+        <canvas id="paperCanvas" style="z-index: 4; position: absolute"></canvas>
+        <canvas id="drawCanvas" style="z-index: 3; position: absolute"></canvas>
+        <canvas id="canvas" style="z-index: 2; position: absolute"></canvas>
+        <canvas id="backgroundCanvas" style="z-index: 1; position: absolute"></canvas>
+        <canvas id="smallCanvas" width="28" height="28" style="z-index: 5; position: absolute"></canvas>
         <div id="message" style="position: absolute; right: 0px; top: 0px"></div>
         <div id="debugMessage" style="position: absolute; right: 0px; top: 20px"></div>
     </div>

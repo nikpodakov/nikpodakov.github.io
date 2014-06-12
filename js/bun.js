@@ -1,3 +1,25 @@
+var distanceJoint;
+var ballShape;
+var edgeShape;
+var bd;
+var edgeFilterData;
+var leftSide;
+var rightSide;
+var d1;
+var d2;
+
+function initBunVariables() {
+	distanceJoint = new b2DistanceJointDef();
+	ballShape = new b2CircleShape();
+	edgeShape = new b2PolygonShape();
+	bd = new b2BodyDef();
+	edgeFilterData = new b2Filter();
+	leftSide = new b2Vec2(0,0);
+	rightSide = new b2Vec2(0,0);
+	d1 = new b2Vec2(0,0);
+	d2 = new b2Vec2(0,0);
+}
+
 var bun = {
 	world: null,
 	vertexRadius: 0.4,
@@ -22,7 +44,7 @@ var bun = {
 				}
 			}
 		}
-		this.vertexRadius = minDist / 3 > 0.4 ? 0.4 : minDist / 3 < 0.1 ? 0.1 : minDist / 3;
+		this.vertexRadius = minDist / 3 > 0.8 ? 0.8 : minDist / 3 < 0.3 ? 0.3 : minDist / 3;
 
 		var b = this;
 		verticesCoordsList.forEach(function (coord) {
@@ -119,31 +141,31 @@ var bun = {
 		this.connectVertexAndEdge(v1, edge);
 		this.connectVertexAndEdge(v2, edge);
 		// fixVerticesOnEdge(edge, v1, v2);
-	},
+	},/*
 	fixVerticesOnEdge: function (edge, v1, v2) {
 		var revoluteJoint = new b2RevoluteJointDef();
 		revoluteJoint.Initialize(v1, v2, edge.GetWorldCenter());
 		var joint = this.world.CreateJoint(revoluteJoint);
 		return joint;
-	},
+	},*/
 	connectVertexAndEdge: function (vertex, edge) {
 		var vertexAnchor = vertex.GetWorldCenter();
 		var edgeSides = edge.getSides();
 		var edgeAnchor = edgeSides.getNearestTo(vertexAnchor);
 
 		//return createRopeJoint(world, vertex, edge, vertexAnchor, edgeAnchor);
-		return createDistanceJoint(this.world, vertex, edge, vertexAnchor, edgeAnchor);
+		distanceJoint.Initialize(vertex, edge, vertexAnchor, edgeAnchor);
+		return world.CreateJoint(distanceJoint);
 	},
 	createVertex: function (x, y, radius) {
-		var ballShape = new b2CircleShape();
 		ballShape.set_m_radius(radius);
-		var ballBd = new b2BodyDef();
 		//ballBd.set_type(b2_staticBody);
-		ballBd.set_type(b2_dynamicBody);
-		ballBd.set_position(new b2Vec2(x, y));
-		ballBd.set_fixedRotation(true);
-		var body = this.world.CreateBody(ballBd);
-		var fixtureDef = new b2FixtureDef();
+		bodyDef.set_type(b2_dynamicBody);
+		position.set_x(x);
+		position.set_y(y);
+		bodyDef.set_position(position);
+		bodyDef.set_fixedRotation(true);
+		var body = this.world.CreateBody(bodyDef);
 		fixtureDef.set_density(this.vertexMass);
 		fixtureDef.set_friction(1);
 		fixtureDef.set_shape(ballShape);
@@ -152,33 +174,35 @@ var bun = {
 		return body;
 	},
 	createEdge: function (x, y, halfWidth, halfHeight, angle) {
-		var shape = new b2PolygonShape();
-		shape.SetAsBox(halfWidth, halfHeight);
-
-		var bd = new b2BodyDef();
+		edgeShape.SetAsBox(halfWidth, halfHeight);
 		bd.set_type(b2_dynamicBody);
 		// bd.set_type(b2_staticBody);
-		bd.set_position(new b2Vec2(x, y));
+		position.set_x(x);
+		position.set_y(y);
+		bd.set_position(position);
 		if (angle != null){
 			bd.set_angle(angle);
 		}
 
 		var body = this.world.CreateBody(bd);
-		var edgeFixture = body.CreateFixture(shape, this.vertexMass * 0.1);
-		var edgeFilterData = new b2Filter();
+		var edgeFixture = body.CreateFixture(edgeShape, this.vertexMass * 0.1);
 		edgeFilterData.set_groupIndex(-1);
 		edgeFixture.SetFilterData(edgeFilterData);
 		body.getSides = function() {
 			var angle = this.GetAngle();
 			var position = this.GetWorldCenter();
+			leftSide.set_x(position.get_x() - Math.cos(angle) * halfWidth);
+			leftSide.set_y(position.get_y() - Math.sin(angle) * halfWidth);
+			rightSide.set_x(position.get_x() + Math.cos(angle) * halfWidth);
+			rightSide.set_y(position.get_y() + Math.sin(angle) * halfWidth);
 			return {
-				left: new b2Vec2(position.get_x() - Math.cos(angle) * halfWidth,
-						position.get_y() - Math.sin(angle) * halfWidth),
-				right: new b2Vec2(position.get_x() + Math.cos(angle) * halfWidth,
-						position.get_y() + Math.sin(angle) * halfWidth),
+				left: leftSide,
+				right: rightSide,
 				getNearestTo: function (point) {
-					var d1 = new b2Vec2(point.get_x() - this.left.get_x(), point.get_y() - this.left.get_y());
-					var d2 = new b2Vec2(point.get_x() - this.right.get_x(), point.get_y() - this.right.get_y());
+					d1.set_x(point.get_x() - this.left.get_x());
+					d1.set_y(point.get_y() - this.left.get_y());
+					d2.set_x(point.get_x() - this.right.get_x());
+					d2.set_y(point.get_y() - this.right.get_y());
 					if (d1.Length() < d2.Length()) {
 						return this.left;
 					}

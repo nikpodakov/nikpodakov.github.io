@@ -22,6 +22,7 @@ function paperInit() {
             strokeColor : '#E4141B',
             strokeWidth: 7,
 	        strokeCap: 'round',
+            dashArray: [5, 10],
             fullySelected : false
         });
         path.add(event.point);
@@ -135,6 +136,30 @@ function classifyA(canvas, net_id) {
     return ans;
 }
 
+function windHack(paths) {
+    var lToR = 0;
+    var rToL = 0;
+
+    paths.forEach(function (path) {
+        var segLength = path.length;
+        if (path.getPointAt(0).x < path.getPointAt(segLength).x) {
+            lToR += segLength;
+        } else {
+            rToL += segLength;
+        }
+    });
+
+    if (lToR > rToL && forcesDirection != 1) {
+        directForces(1);
+        resetForcesValue();
+    }
+    else if(lToR <= rToL && forcesDirection != -1){
+        directForces(-1);
+	    resetForcesValue();
+    }
+	strengthenForces();
+}
+
 function process() {
     var currentPaths = paths;
     paths = null;
@@ -186,6 +211,9 @@ function process() {
         }
 
         bun.buildBun(world, bunContourPoints, otherContours);
+    } else if (currentPaths.length == 4) {
+        //emulate wind
+        windHack(currentPaths);
     }
 
     for (var i = 0; i < currentPaths.length; i++) {

@@ -33,20 +33,20 @@ function directForces(direction) {
 }
 
 function strengthenForces() {
-	if (forcesValue < bun.vertexMass * 8) {
-		forcesValue += bun.vertexMass * 2;
+	if (forcesValue < bun.vertexMass * bun.vertexRadius * 14) {
+		forcesValue += bun.vertexMass * bun.vertexRadius * 6;
 	}
 }
 
 function setForcesValue(value) {
-	forcesValue = bun.vertexMass * 3;
+	forcesValue = bun.vertexMass * bun.vertexRadius * 10;
 	if(value != null) {
 		forcesValue = bun.vertexMass * value;
 	}
 }
 
 function weakenForces() {
-	forcesValue -= bun.vertexMass * 2;
+	forcesValue -= bun.vertexMass * bun.vertexRadius * 6;
 	if(forcesValue < 0) {
 		forcesValue = 0;
 	}

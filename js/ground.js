@@ -29,7 +29,19 @@ var firmament = [];
 var bridgeGround = [];
 var contour = [];
 
-function createWorldBounds() {
+var ground = [];
+
+function createWorldBounds(length, hight) {
+	position = new b2Vec2(0, 0);
+	bodyDef = new b2BodyDef();
+	fixtureDef = new b2FixtureDef();
+
+	generateGround(length, hight);
+	createLeftWall();
+	createRightWall();
+}
+
+function createWorldBounds1() {
 	position = new b2Vec2(0, 0);
 	bodyDef = new b2BodyDef();
 	fixtureDef = new b2FixtureDef();
@@ -42,6 +54,47 @@ function createWorldBounds() {
 	createFirmament();
 	createSpringboards();
 	createBridgeGround ();
+}
+
+function generateGround(length, hight) {
+	leftWall.push({x: -30, y: hight * 2 / PTM});
+	leftWall.push({x: -30, y: 0});
+	leftWall.push({x: -10, y: 0});
+	leftWall.push({x: -10, y: hight * 2 / PTM});
+	rightWall.push({x: length / PTM + 20, y: hight * 2 / PTM});
+	rightWall.push({x: length / PTM + 20, y: 0});
+	rightWall.push({x: length / PTM + 40, y: 0});
+	rightWall.push({x: length / PTM + 40, y: hight * 2 / PTM});
+	ground.push({x: -50, y: -1000 / PTM});
+	ground.push({x: -50, y: hight / PTM * 0.8});
+	for(var i = 0; i <= length; i += length / 100) {
+		/*var y = (Math.cos(i / length * Math.PI) + 1) / 2 * hight / PTM * 0.8;
+		y += (Math.sin(i * 17 / length * Math.PI)* -0.008 + Math.cos(i * 59 / length * Math.PI) * 0.003 + Math.sin(i * 47 / length * Math.PI) * 0.002) *
+			Math.sin(i / length * Math.PI) * length / PTM;
+		ground.push({x: i / PTM, y: y});*/
+		var y = (Math.cos(i / length * Math.PI) + 1) / 2 * hight / PTM * 0.8;
+		y += (Math.sin(i * (Math.random() * 12 + 8) / length * Math.PI)* -0.006 +
+			Math.cos(i * (Math.random() * 12 + 18) / length * Math.PI) * 0.0015 +
+			Math.sin(i * (Math.random() * 16 + 24) / length * Math.PI) * 0.001) *
+			Math.sin(i / length * Math.PI) * length / PTM;
+		ground.push({x: i / PTM, y: y});
+	}
+	ground.push({x: length / PTM + 50, y: 0});
+	ground.push({x: length / PTM + 50, y: -1000 / PTM});
+	var polygonVerticesList = [];
+	ground.forEach(function (point) {
+		polygonVerticesList.push(new b2Vec2(point.x, point.y - bun.vertexRadius/2));
+	});
+	var polygonShape = createChainShape( polygonVerticesList );
+	polygonVerticesList.forEach(function (vector) {
+		//vector.remove();
+	});
+	fixtureDef.set_shape( polygonShape );
+	fixtureDef.set_friction(boundsFriction);
+	bodyDef.set_type(b2_staticBody);
+	bodyDef.set_position(position);
+	var body = world.CreateBody(bodyDef);
+	body.CreateFixture(fixtureDef);
 }
 
 function initBoundsAndContour() {
